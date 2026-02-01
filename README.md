@@ -1,10 +1,31 @@
 #  Learning SPARK DataLake
 
-## 2. Your personal alternative
+<!-- TOC BEGIN -->
+
+- [1. About](#p-1")
+- [2. Your personal alternative](#p-2)
+- [2.1. How to run 1-node runtime master and worker simultaneously](#p-2.1)
+- [2.2. Professional approach: Docker Compose](#p-2.2)
+- [3. Your first notebook](#p-3)
+- [4. How organized work with labs](#p-4)
+- [5. Labs descriptions](#p-5)
+- [5.1. Lab_0 - test conection to the Spark](#p-5.1)
+- [5.2. Lab_1 - Scenario: Merge/Upsert](#p-5.2)
+- [5.3. Lab-2: Parallel computing and Partitioning](#p-5.3)
+- [6. Helpfull links](#p-6)
+
+
+<!-- TOC END -->
+## <a name="p-1">1. About</a> 
+
+
+## <a name="p-2">2. Your personal alternative</a>
+
+
 
 My personal alternative is buld using docker image: [/jupyter/pyspark-notebook](https://hub.docker.com/r/jupyter/pyspark-notebook).
 
-### 2.1. How to run 1-node runtime master and worker simultaneously
+### <a name="p-2.1">2.1. How to run 1-node runtime master and worker simultaneously</a>
 
 To run 1-node  **jupyter/pyspark-notebook**  you can use *docker run*.
 
@@ -55,7 +76,7 @@ pip install delta-spark==3.2.0
 
 
 
-### 2.2. Professional approach: Docker Compose
+### <a name="p-2.2">2.2. Professional approach: Docker Compose</a>
 
 I build my own image, because of to work with delta lake I need install addition packeges. In addition if you need to add some pyhton packages you need to build your own image. So, I have done it at the beginning.
 
@@ -104,11 +125,14 @@ services:
       - "8888:8888" # Jupyter Lab
       - "8080:8080" # Spark Master Web UI
       - "7077:7077" # Spark Master Port
+      - "4040-4045:4040-4045" # Ports for Application UI
+      - "8081:8081"
+      - "8082:8082"
     environment:
       - JUPYTER_ENABLE_LAB=yes
     volumes:
       - ./notebooks:/home/jovyan/work
-    # Явно запускаємо Master як фоновий процес, а потім Jupyter
+    # Start  Master as background process, then Jupyter
     command: >
       sh -c "/usr/local/spark/bin/spark-class org.apache.spark.deploy.master.Master --ip 0.0.0.0 & 
              start-notebook.sh --NotebookApp.token=''"
@@ -125,7 +149,7 @@ services:
     environment:
       - SPARK_WORKER_CORES=1
       - SPARK_WORKER_MEMORY=1G
-    # Запускаємо воркер через spark-class
+    # start worker using spark-class
     command: >
       sh -c "/usr/local/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077"
 
@@ -168,7 +192,7 @@ docker-compose stop
 It a bit quicker but your resource will not free
 
 
-## 3. Your first notebook
+## <a name="p-3">3. Your first notebook
 
 I hope your remenber that delta-spark packege must be installed, see p. 2.1 and 2.2. with particular this version, because in this container I see spark version 3.5.
 
@@ -230,7 +254,7 @@ Spark version: 3.5.0 without Delta support
 
 ```
 
-## How organized work with labs
+## <a name="p-4">How organized work with labs</a>
 
 Every lab has lab own data store, which is described in this fragmant:
 
@@ -253,14 +277,14 @@ lab 0 is about test conection. So you can see in notebooks 2 files:
 
 During execution the second one you will see folder lab_0/lakehouse in your persistent storage and your table.
 
-## Labs descriptions
+## <a name="p-5">5. Labs descriptions</a>
 
-### Lab_0 - test conection to the Spark
+### <a name="p-5.1">5.1. Lab_0 - test conection to the Spark</a>
 
 - [Lab-0_TestConnection-1.ipynb](./notebooks/Lab-0_TestConnection-1.ipynb), whith example, how to connect to Spark withoud Delta Lake.
 - [Lab-0_TestConnection-2.ipynb](./notebooks/Lab-0_TestConnection-2.ipynb), whith example, how to connect to Spark with Delta Lake.
 
-### Lab_1 - Scenario: Merge/Upsert
+### <a name="p-5.2">5.2. Lab_1 - Scenario: Merge/Upsert</a>
 
 In Lab-1, we focus on the "magic" of Delta Lake, namely the ability to do MERGE (Upsert), which is an impossible task for conventional file systems (such as pure Parquet or CSV).
 
@@ -279,7 +303,7 @@ Using python package **Faker**, we can do the following:
 - Localization: Using Faker allows you to create realistic customer profiles (email, addresses, names).
 - SQL validation: We immediately confirmed the success of the write via SELECT * FROM bronze_clients.
 
-### Lab-2: Parallel computing and Partitioning
+### <a name="p-5.3">5.3. Lab-2: Parallel computing and Partitioning</a>
 
 **Objective:**
 
@@ -325,7 +349,7 @@ If you go to the notebooks/lab_2/lakehouse/partitioned_transactions folder in Wi
 In Oracle you use PARTITION BY RANGE/LIST for large tables. In Spark it works the same way:
 The next time you write SELECT * FROM table WHERE city='Kyiv', Spark won't even open the folders with other cities. It will go straight to the desired directory. This is called Partition Pruning.
 
-## Helpfull links
+## <a name="p-6">6. Helpfull links</a>
 
 - [Ms pyspark basics](https://learn.microsoft.com/en-en/azure/databricks/pyspark/basics);
 - [PySpark data types](https://learn.microsoft.com/en-en/azure/databricks/pyspark/reference/datatypes)
