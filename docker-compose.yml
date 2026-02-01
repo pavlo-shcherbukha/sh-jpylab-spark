@@ -11,11 +11,14 @@ services:
       - "8888:8888" # Jupyter Lab
       - "8080:8080" # Spark Master Web UI
       - "7077:7077" # Spark Master Port
+      - "4040-4045:4040-4045" # Ports for Application UI
+      - "8081:8081"
+      - "8082:8082"
     environment:
       - JUPYTER_ENABLE_LAB=yes
     volumes:
       - ./notebooks:/home/jovyan/work
-    # Явно запускаємо Master як фоновий процес, а потім Jupyter
+    # Start  Master as background process, then Jupyter
     command: >
       sh -c "/usr/local/spark/bin/spark-class org.apache.spark.deploy.master.Master --ip 0.0.0.0 & 
              start-notebook.sh --NotebookApp.token=''"
@@ -32,7 +35,7 @@ services:
     environment:
       - SPARK_WORKER_CORES=1
       - SPARK_WORKER_MEMORY=1G
-    # Запускаємо воркер через spark-class
+    # start worker using spark-class
     command: >
       sh -c "/usr/local/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077"
 

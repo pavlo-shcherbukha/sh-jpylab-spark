@@ -63,11 +63,16 @@ My Docker file is here: [myspark.Dockerfile](./myspark.Dockerfile) and  do not f
 In docker file you can see only one command:
 
 ```bash
-pip install delta-spark==3.2.0
+
+COPY ./requirements_dev.txt /home/jovyan/requirements_dev.txt
+RUN pip install -r /home/jovyan/requirements_dev.txt
 
 ```
 
-It is important to use compatible versions.
+It is important to use compatible versions  delta-spark:  **delta-spark==3.2.0**.
+I put into file: **requirements_dev.txt** all nessesary packages, which I am going to use.
+If you need any package, and it into **requirements_dev.txt** and rebuild docker-compose.
+
 At the first build images for docker compose separeatly using command:
 
 ```bash
@@ -251,13 +256,74 @@ During execution the second one you will see folder lab_0/lakehouse in your pers
 ## Labs descriptions
 
 ### Lab_0 - test conection to the Spark
-- Lab-0_TestConnection-1.ipyn, whith example, how to connect to Spark withoud Delta Lake.
-- Lab-0_TestConnection-1.ipyn, whith example, how to connect to Spark with Delta Lake.
 
-### Lab_0 - tbd
+- [Lab-0_TestConnection-1.ipynb](./notebooks/Lab-0_TestConnection-1.ipynb), whith example, how to connect to Spark withoud Delta Lake.
+- [Lab-0_TestConnection-2.ipynb](./notebooks/Lab-0_TestConnection-2.ipynb), whith example, how to connect to Spark with Delta Lake.
 
-tbd
+### Lab_1 - Scenario: Merge/Upsert
 
+In Lab-1, we focus on the "magic" of Delta Lake, namely the ability to do MERGE (Upsert), which is an impossible task for conventional file systems (such as pure Parquet or CSV).
+
+**Notebook:** [Lab-1_PrepareTestData.ipynb](./notebooks/Lab-1_PrepareTestData.ipynb)
+
+Using python package **Faker**, we can do the following:
+
+- Generate 1000 customers (Version 1).
+- Generate another 200 new customers + 100 customers with changed balances (Version 2).
+- Use MERGE INTO to update our Delta table.
+- Using DESCRIBE HISTORY, we see how Delta Lake recorded these changes.
+
+**Things to note:**
+
+- Pandas generation: We used pd.DataFrame(data), which is the fastest way to generate medium-sized test sets.
+- Localization: Using Faker allows you to create realistic customer profiles (email, addresses, names).
+- SQL validation: We immediately confirmed the success of the write via SELECT * FROM bronze_clients.
+
+### Lab-2: Parallel computing and Partitioning
+
+**Objective:**
+
+- Generate a large amount of data (e.g. 1 million transactions).
+- See task distribution in Spark Web UI.
+- Learn to do Partitioning to speed up queries.
+
+**Notebook**: [Lab-2_ParallelComputing.ipynb](./notebooks/Lab-2_ParallelComputing.ipynb)
+
+**Things to note:**
+
+- **Connection**
+
+See and remeber addition options
+
+```py
+from pyspark.sql import SparkSession
+from delta import configure_spark_with_delta_pip
+
+builder = SparkSession.builder \
+    .appName("Lab-2-2-ParallelProcessing") \
+    .config("spark.ui.port", "4040") \ # request port for monitor application UI wich is registered as .appName
+    .config("spark.ui.enabled", "true") \ #  enable  application UI
+    .config("spark.jars.packages", "io.delta:delta-spark_2.12:3.2.0") \
+    .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
+    .config("spark.executor.instances", "2") \  # request explicitly 2 workers
+    .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
+    .config("spark.sql.warehouse.dir", "lab_2/lakehouse") 
+
+spark = configure_spark_with_delta_pip(builder).getOrCreate()
+print(f"Spark version: {spark.version} with Delta support Lab-2")
+
+```
+
+- **Paritioning**
+
+If you go to the notebooks/lab_2/lakehouse/partitioned_transactions folder in Windows Explorer now, you'll see the magic:
+
+- There's no one big file there.
+- There are separate folders there: city=Kyiv, city=Lviv, city=Odesa, etc.
+- Inside each folder are your .parquet files.
+
+In Oracle you use PARTITION BY RANGE/LIST for large tables. In Spark it works the same way:
+The next time you write SELECT * FROM table WHERE city='Kyiv', Spark won't even open the folders with other cities. It will go straight to the desired directory. This is called Partition Pruning.
 
 ## Helpfull links
 

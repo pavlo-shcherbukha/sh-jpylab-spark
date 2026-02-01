@@ -1,0 +1,5 @@
+# Install Delta Lake for Spark 3.2.x
+delta-spark==3.2.0
+oracledb
+pandoc
+Faker
