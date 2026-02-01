@@ -1,0 +1,52 @@
+version: '3.8'
+services:
+  spark-master:
+    #image: jupyter/pyspark-notebook:latest
+    build:
+      context: .
+      dockerfile: ./myspark.Dockerfile
+    container_name: spark-master
+    user: root
+    ports:
+      - "8888:8888" # Jupyter Lab
+      - "8080:8080" # Spark Master Web UI
+      - "7077:7077" # Spark Master Port
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+    volumes:
+      - ./notebooks:/home/jovyan/work
+    # Явно запускаємо Master як фоновий процес, а потім Jupyter
+    command: >
+      sh -c "/usr/local/spark/bin/spark-class org.apache.spark.deploy.master.Master --ip 0.0.0.0 & 
+             start-notebook.sh --NotebookApp.token=''"
+
+  spark-worker-1:
+    #image: jupyter/pyspark-notebook:latest
+    build:
+      context: .
+      dockerfile: ./myspark.Dockerfile
+    container_name: spark-worker-1
+    user: root
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_WORKER_CORES=1
+      - SPARK_WORKER_MEMORY=1G
+    # Запускаємо воркер через spark-class
+    command: >
+      sh -c "/usr/local/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077"
+
+  spark-worker-2:
+    #image: jupyter/pyspark-notebook:latest
+    build:
+      context: .
+      dockerfile: ./myspark.Dockerfile
+    container_name: spark-worker-2
+    user: root
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_WORKER_CORES=1
+      - SPARK_WORKER_MEMORY=1G
+    command: >
+      sh -c "/usr/local/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077"
