@@ -11,6 +11,9 @@ services:
       - "8888:8888" # Jupyter Lab
       - "8080:8080" # Spark Master Web UI
       - "7077:7077" # Spark Master Port
+      - "4040-4045:4040-4045" # Діапазон для Application UI
+      - "8081:8081"
+      - "8082:8082"
     environment:
       - JUPYTER_ENABLE_LAB=yes
     volumes:
