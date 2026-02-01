@@ -63,11 +63,16 @@ My Docker file is here: [myspark.Dockerfile](./myspark.Dockerfile) and  do not f
 In docker file you can see only one command:
 
 ```bash
-pip install delta-spark==3.2.0
+
+COPY ./requirements_dev.txt /home/jovyan/requirements_dev.txt
+RUN pip install -r /home/jovyan/requirements_dev.txt
 
 ```
 
-It is important to use compatible versions.
+It is important to use compatible versions  delta-spark:  **delta-spark==3.2.0**.
+I put into file: **requirements_dev.txt** all nessesary packages, which I am going to use.
+If you need any package, and it into **requirements_dev.txt** and rebuild docker-compose.
+
 At the first build images for docker compose separeatly using command:
 
 ```bash
